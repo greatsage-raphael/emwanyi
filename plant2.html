@@ -1,0 +1,303 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Coffee Growth & Harvest Animation</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        html, body {
+            overflow: hidden; /* Prevent default scrollbars */
+            height: 100%;
+            background-color: #000000; /* Black background */
+        }
+
+        .fixed-container {
+            width: 100%;
+            height: 100vh; /* Full viewport height */
+            position: relative;
+            display: flex;
+            justify-content: center; /* Center horizontally */
+            align-items: flex-end;   /* Align items towards the bottom */
+            overflow: hidden; /* Clip content that might overflow during zoom */
+        }
+
+        /* Base style for all plant-related elements */
+        .plant-element {
+            position: absolute;
+            left: 50%; /* Center horizontally */
+            transform: translateX(-50%);
+            height: auto;
+            z-index: 5;
+            opacity: 0; /* Start all hidden by default */
+            max-width: 90%; /* Prevent excessive width on large screens */
+            max-height: 85vh; /* Limit height (allow slightly more for zoom) */
+            will-change: transform, opacity; /* Optimize for animation */
+        }
+
+        /* Style for plant stages needing bottom origin for growth */
+        .plant-element.plant-stage {
+             bottom: 10%; /* Common bottom alignment for plants */
+             transform-origin: center bottom; /* Default for growth */
+        }
+
+        /* Initial seed image */
+        .seed-img {
+            width: 150px;
+            opacity: 1; /* Starts visible */
+            bottom: 15%; /* Specific position */
+            z-index: 6; /* Above others initially */
+            transform-origin: center bottom;
+        }
+
+        /* Specific sizes for growth stages */
+        .plant-germinating { max-width: 150px; max-height: 20vh;}
+        .plant-seedling    { max-width: 250px; max-height: 35vh;}
+        .plant-sapling     { max-width: 400px; max-height: 55vh;}
+        .plant-mature      { max-width: 550px; max-height: 75vh;}
+        .plant-unripe      { max-width: 550px; max-height: 75vh;}
+        .plant-ripe        { max-width: 550px; max-height: 75vh;} /* Base size before zoom */
+
+        /* Single Cherry for Zoom */
+        .cherry-single {
+            width: 50px; /* Start small visually, scale controlled by JS */
+            max-width: none; /* Allow zooming beyond container */
+            max-height: none;/* Allow zooming beyond container */
+            /* Positioning/transform set by JS for centering and scaling */
+            transform-origin: center center; /* Scale from its center */
+            z-index: 10; /* Ensure it's on top during zoom */
+            object-fit: contain;
+            /* remove bottom alignment from .plant-element.plant-stage */
+            bottom: auto;
+        }
+
+    </style>
+</head>
+<body>
+
+    <div class="fixed-container">
+        <!-- Static Soil Image (Optional) -->
+        <!-- <img src="/path/to/your/soil.png" alt="Soil" class="soil-img"> -->
+
+        <!-- Seed Image -->
+        <img src="/public/out.png" alt="Coffee Seed" class="plant-element seed-img">
+
+        <!-- Growth Stages -->
+        <img src="/public/outer.png" alt="Coffee Plant Germinating" class="plant-element plant-stage plant-germinating">
+        <img src="/public/seedling.png" alt="Coffee Seedling" class="plant-element plant-stage plant-seedling">
+        <img src="/public/sapling.png" alt="Coffee Sapling" class="plant-element plant-stage plant-sapling">
+        <img src="/public/mature.jpg" alt="Mature Coffee Plant" class="plant-element plant-stage plant-mature">
+
+        <!-- NEW: Fruiting Stages -->
+        <img src="/public/unripe.jpg" alt="Coffee Plant Unripe Cherries" class="plant-element plant-stage plant-unripe">
+        <img src="/public/ripe.jpg" alt="Coffee Plant Ripe Cherries" class="plant-element plant-stage plant-ripe">
+
+        <!-- NEW: Single Cherry for Zoom -->
+        <img src="/public/zoom.png" alt="Single Ripe Coffee Cherry" class="plant-element cherry-single">
+    </div>
+
+    <!-- Import anime.js library -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/animejs/3.2.1/anime.min.js"></script>
+
+    <script>
+    document.addEventListener('DOMContentLoaded', function() {
+        // --- Element Selectors ---
+        const seed = document.querySelector('.seed-img');
+        const plantGerminating = document.querySelector('.plant-germinating');
+        const plantSeedling = document.querySelector('.plant-seedling');
+        const plantSapling = document.querySelector('.plant-sapling');
+        const plantMature = document.querySelector('.plant-mature');
+        const plantUnripe = document.querySelector('.plant-unripe');
+        const plantRipe = document.querySelector('.plant-ripe');
+        const cherrySingle = document.querySelector('.cherry-single');
+
+        // --- Animation State ---
+        const maxProgress = 2.0; // 0-1.5 (plants), 1.5-1.75 (zoom ripe), 1.75-2.0 (switch cherry)
+        let animationProgress = 0;
+        const scrollSensitivity = 0.005; // Adjust sensitivity for the 0-2.0 range
+
+        // --- Function to Update Visuals Based on Progress ---
+        function updateAnimation(progress) {
+            // Define breakpoints for each stage transition
+            const germinatingEnd = 0.25;
+            const seedlingEnd = 0.50;
+            const saplingEnd = 0.75;
+            const matureEnd = 1.0;
+            const unripeEnd = 1.25;
+            const ripeEnd = 1.5;          // Ripe plant fully visible
+            const ripeZoomEnd = 1.75;     // End of zooming into the ripe plant image
+            const cherryFocusEnd = 2.0;   // End of switching to the single cherry image
+
+            // Opacity variables
+            let seedOpacity = 0, germinatingOpacity = 0, seedlingOpacity = 0, saplingOpacity = 0, matureOpacity = 0;
+            let unripeOpacity = 0, ripeOpacity = 0, cherryOpacity = 0;
+            // Scale variables
+            let seedScale = 1, germinatingScale = 0.8, seedlingScale = 0.8, saplingScale = 0.8, matureScale = 0.8;
+            let unripeScale = 0.95, ripeScale = 0.95; // Base scales before their transitions
+            let cherryScale = 0.1; // Initial tiny scale for the single cherry
+
+            // Final zoom scales (adjust these for desired effect)
+            const finalRipeZoomScale = 4.0; // How much the ripe plant image zooms in
+            const finalCherryScale = 8.0;   // How large the single cherry image becomes
+
+            // --- Target Zoom Origin for Ripe Plant ---
+            // IMPORTANT: Adjust these X% Y% values to target the desired zoom area on ripe_plant.jpg
+            // 50% = horizontal center, Y% = percentage down from the top
+            const ripeZoomOrigin = '85% 20%'; // <<< ADJUST THESE VALUES
+
+            // --- Calculate opacities and scales ---
+
+            // Stages 1-4 (Seed to Mature)
+            if (progress >= 0 && progress < germinatingEnd) { // Seed -> Germinating
+                const phaseProgress = progress / germinatingEnd;
+                seedOpacity = Math.max(0, 1 - phaseProgress * 1.5);
+                germinatingOpacity = Math.min(1, phaseProgress * 1.5);
+                seedScale = 1 + phaseProgress * 0.1;
+                germinatingScale = 0.8 + phaseProgress * 0.2;
+                 // Reset later stages if scrolling back quickly
+                unripeOpacity = 0; ripeOpacity = 0; cherryOpacity = 0;
+            } else if (progress >= germinatingEnd && progress < seedlingEnd) { // Germinating -> Seedling
+                const phaseProgress = (progress - germinatingEnd) / (seedlingEnd - germinatingEnd);
+                germinatingOpacity = Math.max(0, 1 - phaseProgress * 1.5);
+                seedlingOpacity = Math.min(1, phaseProgress * 1.5);
+                germinatingScale = (0.8 + 0.2) * (1 + phaseProgress * 0.1); // Base scale 1.0
+                seedlingScale = 0.8 + phaseProgress * 0.2;
+                seedOpacity = 0;
+                 // Reset later stages
+                unripeOpacity = 0; ripeOpacity = 0; cherryOpacity = 0;
+            } else if (progress >= seedlingEnd && progress < saplingEnd) { // Seedling -> Sapling
+                const phaseProgress = (progress - seedlingEnd) / (saplingEnd - seedlingEnd);
+                seedlingOpacity = Math.max(0, 1 - phaseProgress * 1.5);
+                saplingOpacity = Math.min(1, phaseProgress * 1.5);
+                seedlingScale = (0.8 + 0.2) * (1 + phaseProgress * 0.1); // Base scale 1.0
+                saplingScale = 0.8 + phaseProgress * 0.2;
+                seedOpacity = 0; germinatingOpacity = 0;
+                 // Reset later stages
+                 unripeOpacity = 0; ripeOpacity = 0; cherryOpacity = 0;
+            } else if (progress >= saplingEnd && progress < matureEnd) { // Sapling -> Mature
+                const phaseProgress = (progress - saplingEnd) / (matureEnd - saplingEnd);
+                saplingOpacity = Math.max(0, 1 - phaseProgress * 1.5);
+                matureOpacity = Math.min(1, phaseProgress * 1.5);
+                saplingScale = (0.8 + 0.2) * (1 + phaseProgress * 0.1); // Base scale 1.0
+                matureScale = 0.8 + phaseProgress * 0.2;
+                seedOpacity = 0; germinatingOpacity = 0; seedlingOpacity = 0;
+                 // Reset later stages
+                 unripeOpacity = 0; ripeOpacity = 0; cherryOpacity = 0;
+            }
+            // Stage 5: Mature -> Unripe
+            else if (progress >= matureEnd && progress < unripeEnd) {
+                const phaseProgress = (progress - matureEnd) / (unripeEnd - matureEnd);
+                matureOpacity = Math.max(0, 1 - phaseProgress * 1.5);
+                unripeOpacity = Math.min(1, phaseProgress * 1.5);
+                matureScale = (0.8 + 0.2) * (1 + phaseProgress * 0.05); // Base scale 1.0
+                unripeScale = 0.95 + phaseProgress * 0.05; // Scales from 0.95 to 1.0
+                seedOpacity = 0; germinatingOpacity = 0; seedlingOpacity = 0; saplingOpacity = 0;
+                // Reset later stages
+                ripeOpacity = 0; cherryOpacity = 0;
+            }
+            // Stage 6: Unripe -> Ripe
+            else if (progress >= unripeEnd && progress < ripeEnd) {
+                const phaseProgress = (progress - unripeEnd) / (ripeEnd - unripeEnd);
+                unripeOpacity = Math.max(0, 1 - phaseProgress * 1.5);
+                ripeOpacity = Math.min(1, phaseProgress * 1.5);
+                unripeScale = (0.95 + 0.05) * (1 + phaseProgress * 0.05); // Base scale 1.0
+                ripeScale = 0.95 + phaseProgress * 0.05; // Scales from 0.95 to 1.0
+                seedOpacity = 0; germinatingOpacity = 0; seedlingOpacity = 0; saplingOpacity = 0; matureOpacity = 0;
+                // Reset later stage
+                cherryOpacity = 0; cherryScale = 0.1; // Reset cherry explicitly
+            }
+            // Stage 7: Zoom into Ripe Plant (1.5 - 1.75)
+            else if (progress >= ripeEnd && progress < ripeZoomEnd) {
+                const phaseProgress = (progress - ripeEnd) / (ripeZoomEnd - ripeEnd);
+                ripeOpacity = 1; // Keep ripe plant fully visible
+                ripeScale = 1.0 + phaseProgress * (finalRipeZoomScale - 1.0); // Scale up
+                // Keep others hidden
+                cherryOpacity = 0; cherryScale = 0.1; // Ensure cherry remains hidden/reset
+                seedOpacity = 0; germinatingOpacity = 0; seedlingOpacity = 0; saplingOpacity = 0; matureOpacity = 0; unripeOpacity = 0;
+                // Note: transformOrigin handled in anime call below
+            }
+            // Stage 8: Switch from Zoomed Ripe to Single Cherry (1.75 - 2.0)
+            else if (progress >= ripeZoomEnd && progress <= cherryFocusEnd) { // Include end point
+                const phaseProgress = (progress - ripeZoomEnd) / (cherryFocusEnd - ripeZoomEnd);
+                // Fade out the (already zoomed) ripe plant
+                ripeOpacity = Math.max(0, 1 - phaseProgress * 2); // Faster fade out
+                ripeScale = finalRipeZoomScale; // Keep it at its max zoomed size while fading
+
+                // Fade in the single cherry
+                cherryOpacity = Math.min(1, phaseProgress * 2); // Faster fade in
+                // Scale the single cherry up from a relative size to its final large size
+                let initialCherryZoomScale = finalRipeZoomScale * 0.8; // Adjust 0.8 based on visual size match
+                cherryScale = initialCherryZoomScale + phaseProgress * (finalCherryScale - initialCherryZoomScale);
+
+                // Ensure all previous stages are hidden
+                seedOpacity = 0; germinatingOpacity = 0; seedlingOpacity = 0; saplingOpacity = 0; matureOpacity = 0; unripeOpacity = 0;
+                // Note: transformOrigin handled in anime call below for ripe plant
+            }
+
+            // --- Apply Animations using Anime.js ---
+            // Apply default origin for growth stages
+            anime({ targets: seed,           opacity: seedOpacity,      scale: seedScale,      transformOrigin: 'center bottom', duration: 0 });
+            anime({ targets: plantGerminating, opacity: germinatingOpacity, scale: germinatingScale, transformOrigin: 'center bottom', duration: 0 });
+            anime({ targets: plantSeedling,    opacity: seedlingOpacity,    scale: seedlingScale,    transformOrigin: 'center bottom', duration: 0 });
+            anime({ targets: plantSapling,     opacity: saplingOpacity,     scale: saplingScale,     transformOrigin: 'center bottom', duration: 0 });
+            anime({ targets: plantMature,      opacity: matureOpacity,      scale: matureScale,      transformOrigin: 'center bottom', duration: 0 });
+            anime({ targets: plantUnripe,      opacity: unripeOpacity,      scale: unripeScale,      transformOrigin: 'center bottom', duration: 0 });
+
+            // Apply potentially dynamic origin for Ripe Plant
+            let currentRipeOrigin = 'center bottom'; // Default
+            if (progress >= ripeEnd) { // If in zoom or switch phase (Stage 7 or 8)
+                 currentRipeOrigin = ripeZoomOrigin; // Use the specific zoom origin
+            }
+            anime({
+                targets: plantRipe,
+                opacity: ripeOpacity,
+                scale: ripeScale,
+                transformOrigin: currentRipeOrigin, // Apply the determined origin
+                duration: 0
+            });
+
+            // Apply transform for cherry (origin is center center via CSS)
+            anime({
+                targets: cherrySingle,
+                opacity: cherryOpacity,
+                scale: cherryScale,
+                translateX: '-50%', // Keep centered horizontally
+                translateY: '-50%', // Keep centered vertically
+                duration: 0
+            });
+        }
+
+        // --- Mouse Wheel Event Listener ---
+        window.addEventListener('wheel', function(event) {
+            event.preventDefault(); // Important to prevent page scroll
+
+            if (event.deltaY < 0) {
+                // Scrolling Up
+                animationProgress -= scrollSensitivity;
+            } else if (event.deltaY > 0) {
+                // Scrolling Down
+                animationProgress += scrollSensitivity;
+            }
+
+            // Clamp progress between 0 and maxProgress
+            animationProgress = Math.max(0, Math.min(maxProgress, animationProgress));
+
+            // Update visuals based on new progress
+            updateAnimation(animationProgress);
+
+        }, { passive: false }); // passive: false is necessary to allow preventDefault
+
+        // --- Initial Animation State ---
+        // Set the initial view based on starting progress (0)
+        updateAnimation(animationProgress);
+
+    }); // End of DOMContentLoaded
+    </script>
+
+</body>
+</html>

@@ -1,0 +1,866 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Coffee Story: From Seed to Cup</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        html, body {
+            background-color: #000000; /* Black background */
+            color: #fff; /* Basic text color */
+            font-family: sans-serif;
+            /* Always hide scrollbar as scroll is hijacked */
+            overflow: hidden;
+            height: 100vh;
+            width: 100vw;
+        }
+
+        /* Navbar styles */
+        .navbar {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 60px;
+            background-color: rgba(0, 0, 0, 0.7);
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 0 20px;
+            z-index: 1000;
+            backdrop-filter: blur(5px);
+        }
+
+        .logo {
+            font-size: 24px;
+            font-weight: bold;
+            color: #fff;
+            text-decoration: none;
+        }
+
+        .nav-links {
+            display: flex;
+            gap: 20px;
+        }
+
+        .nav-links a {
+            color: #fff;
+            text-decoration: none;
+            font-size: 16px;
+            transition: color 0.3s ease;
+        }
+
+        .nav-links a:hover {
+            color: #d4a86a; /* Coffee color on hover */
+        }
+
+        /* Footer styles */
+        .footer {
+            position: fixed;
+            bottom: 0;
+            left: 0;
+            width: 100%;
+            height: 40px;
+            background-color: rgba(0, 0, 0, 0.7);
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            z-index: 1000;
+            backdrop-filter: blur(5px);
+        }
+
+        .footer a {
+            color: #fff;
+            text-decoration: none;
+            font-size: 14px;
+            transition: color 0.3s ease;
+        }
+
+        .footer a:hover {
+            color: #d4a86a;
+        }
+
+        /* Common style for fixed, fullscreen sections */
+        .fullscreen-section {
+            width: 100%;
+            height: 100vh; /* Full viewport height */
+            position: fixed;
+            top: 0;
+            left: 0;
+            display: flex; /* Use flex for centering content */
+            justify-content: center; /* Center horizontally */
+            align-items: center;   /* Center vertically */
+            overflow: hidden; /* Clip content */
+            /* opacity: 0; */ /* Control visibility via JS/display */
+            /* pointer-events: none; */ /* Control interactability via JS/display */
+        }
+
+        /* Section 1: Plant Growth */
+        #plant-growth-section {
+            /* Inherits .fullscreen-section styles */
+            z-index: 10; /* Initially on top */
+            /* Align items towards bottom specifically for plants */
+            align-items: flex-end;
+            /* display: flex; */ /* Set by default in JS */
+        }
+
+        /* Base style for all plant-related elements in section 1 */
+        .plant-element {
+            position: absolute;
+            transform: translateX(-50%);
+            height: auto;
+            opacity: 0; /* Start all hidden by default */
+            max-width: 90%; /* Prevent excessive width on large screens */
+            max-height: 85vh; /* Limit height */
+            will-change: transform, opacity;
+        }
+
+        /* Style for plant stages needing bottom origin for growth */
+        .plant-element.plant-stage {
+             bottom: 10%; /* Common bottom alignment for plants */
+             transform-origin: center bottom;
+        }
+
+        /* Initial seed image */
+        .seed-img {
+            width: 150px;
+            opacity: 1; /* Starts visible */
+            bottom: 15%;
+            z-index: 6;
+            transform-origin: center bottom;
+        }
+
+        /* Specific sizes for growth stages */
+        .plant-germinating { max-width: 150px; max-height: 20vh;}
+        .plant-seedling    { max-width: 250px; max-height: 35vh;}
+        .plant-sapling     { max-width: 400px; max-height: 55vh;}
+        .plant-mature      { max-width: 550px; max-height: 75vh;}
+        .plant-unripe      { max-width: 550px; max-height: 75vh;}
+        .plant-ripe        { max-width: 550px; max-height: 75vh;}
+
+        /* Single Cherry for Zoom */
+        .cherry-single-zoom {
+            width: 50px;
+            max-width: none;
+            max-height: none;
+            transform-origin: center center;
+            z-index: 15;
+            object-fit: contain;
+            bottom: auto; /* Override plant-stage bottom */
+            top: 50%; /* Positioned via transform */
+            left: 50%;
+        }
+
+        /* Section 2: Cherry Processing */
+        #cherry-processing-section {
+            /* Inherits .fullscreen-section styles */
+            z-index: 5; /* Below plant initially */
+            display: none; /* Hidden initially, controlled by JS */
+        }
+
+         /* Base style for processing images */
+        .processing-element {
+            position: absolute; /* Positioned within the fixed section */
+            left: 50%;
+            top: 50%;
+            transform: translate(-50%, -50%) scale(0.9); /* Center and initial scale */
+            max-width: 60%; /* Adjust size as needed */
+            max-height: 70vh;
+            height: auto;
+            opacity: 0; /* Start hidden */
+            will-change: opacity, transform;
+            transform-origin: center center;
+        }
+
+        /* YouTube Video Section */
+        #youtube-section {
+            z-index: 3; /* Below other sections */
+            display: none; /* Hidden initially, controlled by JS */
+            background-color: #000; /* Black background */
+            justify-content: center;
+            align-items: center;
+            flex-direction: column;
+        }
+
+        .youtube-container {
+            width: 80%;
+            max-width: 1000px;
+            position: relative;
+            padding-bottom: 56.25%; /* 16:9 aspect ratio */
+            height: 0;
+        }
+
+        .youtube-container iframe {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            border: none;
+        }
+
+        .section-title {
+            margin-bottom: 30px;
+            font-size: 32px;
+            font-weight: bold;
+            color: #d4a86a;
+            text-align: center;
+        }
+
+
+        /* FALLING COFFEE BEANS STYLES */
+        .falling-beans-container {
+            position: fixed;
+            top: 0;
+            width: 100%;
+            height: 100%;
+            z-index: 1; /* Below your main content */
+            pointer-events: none; /* Don't intercept clicks */
+            overflow: hidden;
+        }
+        
+        .coffee-bean {
+            position: absolute;
+            width: 60px;
+            height: auto;
+            opacity: 0.8;
+            z-index: 1;
+            will-change: transform;
+        }
+        
+        /* Left side beans container */
+        .left-beans {
+            position: absolute;
+            left: 0;
+            top: 0;
+            width: 20%;
+            height: 100%;
+        }
+        
+        /* Right side beans container */
+        .right-beans {
+            position: absolute;
+            right: 0;
+            top: 0;
+            width: 20%;
+            height: 100%;
+        }
+
+/* Typewriter Text Styles */
+.typewriter-container {
+    position: absolute;
+    top: 30%;
+    left: 0;
+    width: 100%;
+    text-align: center;
+    z-index: 20;
+    transition: opacity 0.8s ease, transform 0.8s ease;
+}
+
+.typewriter-text {
+    font-size: 2rem;
+    color: #fff;
+    line-height: 1.5;
+    text-align: center;
+}
+
+@media (min-width: 768px) {
+    .typewriter-text {
+        font-size: 3rem;
+    }
+}
+
+@media (min-width: 992px) {
+    .typewriter-text {
+        font-size: 4rem;
+    }
+}
+
+@media (min-width: 1200px) {
+    .typewriter-text {
+        font-size: 5rem;
+    }
+}
+
+.static-text {
+    color: #fff;
+}
+
+.dynamic-text {
+    color: #d4a86a; /* Coffee color */
+    font-weight: 500;
+}
+
+.cursor {
+    display: inline-block;
+    margin-left: 3px;
+    width: 3px;
+    background-color: #fff;
+    animation: blink 1s infinite;
+}
+
+.cursor.typing {
+    animation: none;
+}
+
+@keyframes blink {
+    0%  { background-color: #fff; }
+    49% { background-color: #fff; }
+    50% { background-color: transparent; }
+    99% { background-color: transparent; }
+    100%  { background-color: #fff; }
+}
+    </style>
+</head>
+<body> <!-- No .no-scroll needed as overflow is always hidden -->
+    <!-- Navbar -->
+    <nav class="navbar">
+        <a href="#" class="logo">Emwanyi</a>
+        <div class="nav-links">
+            <a href="#">Home</a>
+            <a href="#">About</a>
+        </div>
+    </nav>
+
+    <!-- Footer -->
+    <footer class="footer">
+        <a href="https://mwambazi-collins.vercel.app/">© Emwanyi 2025 by 🫠</a>
+    </footer>
+
+    <!-- Falling Coffee Beans Container -->
+    <div class="falling-beans-container">
+        <div class="left-beans" id="leftBeansContainer"></div>
+        <div class="right-beans" id="rightBeansContainer"></div>
+    </div>
+
+    <div id="typewriter-container" class="typewriter-container">
+        <div id="typewriter-text" class="typewriter-text">
+            <span class="static-text">Watch it all: </span>
+            <span id="dynamic-text" class="dynamic-text"></span>
+            <span class="cursor">_</span>
+        </div>
+    </div>
+
+    <!-- Section 1: Plant Growth -->
+    <section id="plant-growth-section" class="fullscreen-section">
+        <!-- Seed Image -->
+        <img src="/public/out.png" alt="Coffee Seed" class="plant-element seed-img">
+        <!-- Growth Stages -->
+        <img src="/public/outer.png" alt="Coffee Plant Germinating" class="plant-element plant-stage plant-germinating">
+        <img src="/public/seedling.png" alt="Coffee Seedling" class="plant-element plant-stage plant-seedling">
+        <img src="/public/sapling.png" alt="Coffee Sapling" class="plant-element plant-stage plant-sapling">
+        <img src="/public/mature.jpg" alt="Mature Coffee Plant" class="plant-element plant-stage plant-mature">
+        <img src="/public/unripe.jpg" alt="Coffee Plant Unripe Cherries" class="plant-element plant-stage plant-unripe">
+        <img src="/public/ripe.jpg" alt="Coffee Plant Ripe Cherries" class="plant-element plant-stage plant-ripe">
+        <!-- Single Cherry for Zoom (still part of plant section logic) -->
+        <img src="/public/wet.png" alt="Single Ripe Coffee Cherry" class="plant-element cherry-single-zoom">
+    </section>
+
+    <!-- Section 2: Cherry Processing (Now Fixed, not Sticky) -->
+    <section id="cherry-processing-section" class="fullscreen-section">
+        <!-- All processing images are direct children, absolutely positioned -->
+         <img src="/public/wet.png" alt="Ripe Coffee Cherry" class="processing-element cherry-ripe"> <!-- Image 1 -->
+         <img src="/public/drying.jpg" alt="Drying Coffee Cherry" class="processing-element cherry-drying"> <!-- Image 2 -->
+         <img src="/public/peel.jpg" alt="Partially Peeled Coffee Cherry" class="processing-element cherry-peel"> <!-- Image 3 -->
+         <img src="/public/coffee bean.png" alt="Peeled Coffee Bean" class="processing-element coffee-bean"> <!-- Image 4 -->
+         <img src="/public/ground.jpg" alt="Ground Coffee" class="processing-element coffee-ground"> <!-- Image 5 -->
+         <img src="/public/cup.jpg" alt="Cup of Coffee" class="processing-element coffee-cup"> <!-- Image 6 -->
+    </section>
+
+    <!-- Section 3: YouTube Emwanyi Trailer -->
+    <section id="youtube-section" class="fullscreen-section">
+        <h2 class="section-title">Emwanyi Trailer</h2>
+        <div class="youtube-container">
+          <iframe
+            src="https://www.youtube.com/embed/AgMbkHeT_HA"
+            title="Emwanyi Coffee Documentary Trailer"
+            allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
+            allowfullscreen>
+          </iframe>
+        </div>
+      </section>
+
+    <!-- Import anime.js library -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/animejs/3.2.1/anime.min.js"></script>
+
+    <script>
+    document.addEventListener('DOMContentLoaded', function() {
+        // --- Element Selectors ---
+        const body = document.body; // Not really needed for class toggles anymore
+        const plantGrowthSection = document.getElementById('plant-growth-section');
+        const cherryProcessingSection = document.getElementById('cherry-processing-section');
+        const youtubeSection = document.getElementById('youtube-section');
+
+        // Plant Growth Elements
+        const seed = document.querySelector('.seed-img');
+        const plantGerminating = document.querySelector('.plant-germinating');
+        const plantSeedling = document.querySelector('.plant-seedling');
+        const plantSapling = document.querySelector('.plant-sapling');
+        const plantMature = document.querySelector('.plant-mature');
+        const plantUnripe = document.querySelector('.plant-unripe');
+        const plantRipe = document.querySelector('.plant-ripe');
+        const cherrySingleZoom = document.querySelector('.cherry-single-zoom'); // Still part of plant section
+
+        // Typewriter functionality
+// Function to control typewriter effect with phased content
+function setupTypewriter() {
+    const dynamicText = document.getElementById('dynamic-text');
+    const cursor = document.querySelector('.cursor');
+    const typewriterContainer = document.getElementById('typewriter-container');
+    
+    const textSequence = [
+        "from the farmers 🚜",
+        "to the seed 🫘",
+        "to the sapling 🌱",
+        "to the cherry 🍒",
+        "to the roasted coffee 🔥",
+        "to the distributors 🚚🌍",
+        "to the brewing process 🫖",
+        "to the warm cup of coffee ☕",
+    ];
+    
+    let currentPhase = 0; // 0: typing, 1: waiting, 2: deleting
+    let currentTextIndex = 0;
+    let charIndex = 0;
+    
+    const typeDelay = 70; // Typing speed (ms per character)
+    const deleteDelay = 40; // Deleting speed (ms per character)
+    const waitDelay = 1500; // Time to wait between typing and deleting
+    
+    function typewriterCycle() {
+        const currentText = textSequence[currentTextIndex];
+        
+        // Phase 0: Typing
+        if (currentPhase === 0) {
+            cursor.classList.add('typing');
+            if (charIndex < currentText.length) {
+                dynamicText.textContent += currentText.charAt(charIndex);
+                charIndex++;
+                setTimeout(typewriterCycle, typeDelay);
+            } else {
+                // Move to waiting phase
+                currentPhase = 1;
+                cursor.classList.remove('typing');
+                setTimeout(typewriterCycle, waitDelay);
+            }
+        }
+        // Phase 1: Waiting before deleting
+        else if (currentPhase === 1) {
+            // Move to deleting phase
+            currentPhase = 2;
+            setTimeout(typewriterCycle, 0);
+        }
+        // Phase 2: Deleting
+        else if (currentPhase === 2) {
+            cursor.classList.add('typing');
+            if (charIndex > 0) {
+                dynamicText.textContent = currentText.substring(0, charIndex - 1);
+                charIndex--;
+                setTimeout(typewriterCycle, deleteDelay);
+            } else {
+                // Move to typing phase with next text
+                currentPhase = 0;
+                currentTextIndex = (currentTextIndex + 1) % textSequence.length;
+                cursor.classList.remove('typing');
+                setTimeout(typewriterCycle, 500); // Short pause before typing next
+            }
+        }
+    }
+    
+    // Start the typewriter effect
+    setTimeout(typewriterCycle, 500);
+    
+    // Add a method to hide the typewriter
+    return {
+        hide: function() {
+            anime({
+                targets: typewriterContainer,
+                opacity: 0,
+                translateY: -50,
+                duration: 800,
+                easing: 'easeOutQuad'
+            });
+        }
+    };
+}
+        // Cherry Processing Elements
+        const processingElements = {
+            ripe: cherryProcessingSection.querySelector('.cherry-ripe'),
+            drying: cherryProcessingSection.querySelector('.cherry-drying'),
+            peel: cherryProcessingSection.querySelector('.cherry-peel'),
+            bean: cherryProcessingSection.querySelector('.coffee-bean'),
+            ground: cherryProcessingSection.querySelector('.coffee-ground'),
+            cup: cherryProcessingSection.querySelector('.coffee-cup')
+        };
+        const processingElementOrder = ['ripe', 'drying', 'peel', 'bean', 'ground', 'cup']; // Define order
+
+        // --- Animation State ---
+        let activeHijackSection = 'plant'; // 'plant', 'cherry', or 'youtube'
+
+        // Plant Animation State
+        const plantGrowthMaxProgress = 2.0; // 0-1.5 (plants), 1.5-1.75 (zoom ripe), 1.75-2.0 (switch cherry)
+        let plantAnimationProgress = 0;
+        const plantScrollSensitivity = 0.004;
+
+        // Cherry Animation State
+        const cherryAnimationMaxProgress = 1.0; // Use 0 to 1 for simplicity
+        let cherryAnimationProgress = 0;
+        const cherryScrollSensitivity = 0.006; // Can be adjusted independently
+
+        // --- Config ---
+        const ripeZoomOrigin = '85% 20%';
+        const finalRipeZoomScale = 4.0;
+        const finalCherryScale = 8.0;
+
+        // --- Function to Update Plant Growth Visuals (Mostly Unchanged) ---
+        function updatePlantAnimation(progress) {
+            // Define breakpoints
+            const germinatingEnd = 0.25; // ... (rest of breakpoints same as before)
+            const seedlingEnd = 0.50;
+            const saplingEnd = 0.75;
+            const matureEnd = 1.0;
+            const unripeEnd = 1.25;
+            const ripeEnd = 1.5;
+            const ripeZoomEnd = 1.75;
+            const cherryFocusEnd = plantGrowthMaxProgress; // 2.0
+
+            // Opacity & Scale variables (same as before)
+            let seedOpacity = 0, germinatingOpacity = 0, seedlingOpacity = 0, saplingOpacity = 0, matureOpacity = 0;
+            let unripeOpacity = 0, ripeOpacity = 0, cherryOpacity = 0; // cherryOpacity for cherrySingleZoom
+            let seedScale = 1, germinatingScale = 0.8, seedlingScale = 0.8, saplingScale = 0.8, matureScale = 0.8;
+            let unripeScale = 0.95, ripeScale = 0.95;
+            let cherryScale = 0.1;
+
+            // Calculations (same as before)
+             if (progress <= 0) {
+                seedOpacity = 1; seedScale = 1; germinatingOpacity = 0; seedlingOpacity = 0; saplingOpacity = 0; matureOpacity = 0; unripeOpacity = 0; ripeOpacity = 0; cherryOpacity = 0;
+             } else if (progress > 0 && progress < germinatingEnd) {
+                const phaseProgress = progress / germinatingEnd;
+                seedOpacity = Math.max(0, 1 - phaseProgress * 1.5); germinatingOpacity = Math.min(1, phaseProgress * 1.5);
+                seedScale = 1 + phaseProgress * 0.1; germinatingScale = 0.8 + phaseProgress * 0.2;
+             } else if (progress >= germinatingEnd && progress < seedlingEnd) {
+                 const phaseProgress = (progress - germinatingEnd) / (seedlingEnd - germinatingEnd);
+                 germinatingOpacity = Math.max(0, 1 - phaseProgress * 1.5); seedlingOpacity = Math.min(1, phaseProgress * 1.5);
+                 germinatingScale = 1.0 * (1 + phaseProgress * 0.1); seedlingScale = 0.8 + phaseProgress * 0.2; seedOpacity = 0;
+             } else if (progress >= seedlingEnd && progress < saplingEnd) {
+                 const phaseProgress = (progress - seedlingEnd) / (saplingEnd - seedlingEnd);
+                 seedlingOpacity = Math.max(0, 1 - phaseProgress * 1.5); saplingOpacity = Math.min(1, phaseProgress * 1.5);
+                 seedlingScale = 1.0 * (1 + phaseProgress * 0.1); saplingScale = 0.8 + phaseProgress * 0.2; seedOpacity = 0; germinatingOpacity = 0;
+             } else if (progress >= saplingEnd && progress < matureEnd) {
+                 const phaseProgress = (progress - saplingEnd) / (matureEnd - saplingEnd);
+                 saplingOpacity = Math.max(0, 1 - phaseProgress * 1.5); matureOpacity = Math.min(1, phaseProgress * 1.5);
+                 saplingScale = 1.0 * (1 + phaseProgress * 0.1); matureScale = 0.8 + phaseProgress * 0.2; seedOpacity = 0; germinatingOpacity = 0; seedlingOpacity = 0;
+             } else if (progress >= matureEnd && progress < unripeEnd) {
+                 const phaseProgress = (progress - matureEnd) / (unripeEnd - matureEnd);
+                 matureOpacity = Math.max(0, 1 - phaseProgress * 1.5); unripeOpacity = Math.min(1, phaseProgress * 1.5);
+                 matureScale = 1.0 * (1 + phaseProgress * 0.05); unripeScale = 0.95 + phaseProgress * 0.05;
+                 seedOpacity = 0; germinatingOpacity = 0; seedlingOpacity = 0; saplingOpacity = 0;
+             } else if (progress >= unripeEnd && progress < ripeEnd) {
+                 const phaseProgress = (progress - unripeEnd) / (ripeEnd - unripeEnd);
+                 unripeOpacity = Math.max(0, 1 - phaseProgress * 1.5); ripeOpacity = Math.min(1, phaseProgress * 1.5);
+                 unripeScale = 1.0 * (1 + phaseProgress * 0.05); ripeScale = 0.95 + phaseProgress * 0.05;
+                 seedOpacity = 0; germinatingOpacity = 0; seedlingOpacity = 0; saplingOpacity = 0; matureOpacity = 0;
+             } else if (progress >= ripeEnd && progress < ripeZoomEnd) {
+                 const phaseProgress = (progress - ripeEnd) / (ripeZoomEnd - ripeEnd);
+                 ripeOpacity = 1;
+                 ripeScale = 1.0 + phaseProgress * (finalRipeZoomScale - 1.0);
+                 cherryOpacity = 0; cherryScale = 0.1;
+                 seedOpacity = 0; germinatingOpacity = 0; seedlingOpacity = 0; saplingOpacity = 0; matureOpacity = 0; unripeOpacity = 0;
+             } else if (progress >= ripeZoomEnd && progress <= cherryFocusEnd) {
+                 const phaseProgress = (progress - ripeZoomEnd) / (cherryFocusEnd - ripeZoomEnd);
+                 ripeOpacity = Math.max(0, 1 - phaseProgress * 2);
+                 ripeScale = finalRipeZoomScale;
+                 cherryOpacity = Math.min(1, phaseProgress * 2);
+                 let initialCherryZoomScale = finalRipeZoomScale * 0.8;
+                 cherryScale = initialCherryZoomScale + phaseProgress * (finalCherryScale - initialCherryZoomScale);
+                 seedOpacity = 0; germinatingOpacity = 0; seedlingOpacity = 0; saplingOpacity = 0; matureOpacity = 0; unripeOpacity = 0;
+             }
+
+            // Apply Animations (same targets and properties)
+            anime({ targets: seed, opacity: seedOpacity, scale: seedScale, transformOrigin: 'center bottom', duration: 0, easing: 'linear' });
+            anime({ targets: plantGerminating, opacity: germinatingOpacity, scale: germinatingScale, transformOrigin: 'center bottom', duration: 0, easing: 'linear' });
+            anime({ targets: plantSeedling, opacity: seedlingOpacity, scale: seedlingScale, transformOrigin: 'center bottom', duration: 0, easing: 'linear' });
+            anime({ targets: plantSapling, opacity: saplingOpacity, scale: saplingScale, transformOrigin: 'center bottom', duration: 0, easing: 'linear' });
+            anime({ targets: plantMature, opacity: matureOpacity, scale: matureScale, transformOrigin: 'center bottom', duration: 0, easing: 'linear' });
+            anime({ targets: plantUnripe, opacity: unripeOpacity, scale: unripeScale, transformOrigin: 'center bottom', duration: 0, easing: 'linear' });
+            let currentRipeOrigin = (progress >= ripeEnd) ? ripeZoomOrigin : 'center bottom';
+            anime({ targets: plantRipe, opacity: ripeOpacity, scale: ripeScale, transformOrigin: currentRipeOrigin, duration: 0, easing: 'linear' });
+            anime({
+                targets: cherrySingleZoom, opacity: cherryOpacity, scale: cherryScale,
+                translateX: '-50%', translateY: '-50%', duration: 0, easing: 'linear'
+            });
+        }
+
+        // --- NEW Function to Update Cherry Processing Visuals (Hijacked Scroll) ---
+        function updateCherryAnimation(progress) {
+            const numStages = processingElementOrder.length;
+            // Duration of each fade transition phase (e.g., ripe->drying is one phase)
+            const transitionDuration = cherryAnimationMaxProgress / (numStages - 1);
+
+            // Determine which transition phase we are in
+            let currentStageIndex = Math.floor(progress / transitionDuration);
+            currentStageIndex = Math.min(currentStageIndex, numStages - 2); // Clamp to ensure valid next stage
+
+            // Calculate progress within the current transition phase (0 to 1)
+            let phaseProgress = 0;
+             if (transitionDuration > 0) {
+                 phaseProgress = (progress - (currentStageIndex * transitionDuration)) / transitionDuration;
+             }
+             phaseProgress = Math.max(0, Math.min(1, phaseProgress)); // Clamp 0-1
+
+            const currentStageName = processingElementOrder[currentStageIndex];
+            const nextStageName = processingElementOrder[currentStageIndex + 1];
+
+            // Update opacity and scale for all processing elements
+            processingElementOrder.forEach(name => {
+                const element = processingElements[name];
+                let opacity = 0;
+                let scale = 0.9; // Base scale
+
+                if (name === currentStageName) {
+                    opacity = Math.max(0, 1 - phaseProgress * 1.5); // Fade out current
+                    scale = 0.9 + (1 - phaseProgress) * 0.1; // Scale down slightly
+                } else if (name === nextStageName) {
+                    opacity = Math.min(1, phaseProgress * 1.5); // Fade in next
+                    scale = 0.9 + phaseProgress * 0.1; // Scale up slightly
+                }
+
+                 // Ensure the last image stays fully visible at the end
+                 if (progress >= cherryAnimationMaxProgress && name === processingElementOrder[numStages - 1]) {
+                     opacity = 1;
+                     scale = 1;
+                 }
+                 // Ensure the first image is fully visible at the beginning
+                 if (progress <= 0 && name === processingElementOrder[0]) {
+                     opacity = 1;
+                     scale = 1;
+                 }
+
+
+                anime({
+                    targets: element,
+                    opacity: opacity,
+                    // Combine translate and scale in the transform property
+                    translateX: '-50%',
+                    translateY: '-50%',
+                    scale: scale,
+                    duration: 0, // Immediate update
+                    easing: 'linear'
+                });
+            });
+        }
+
+
+        // --- Falling Coffee Beans Animation ---
+        function createFallingBean(containerSide) {
+            const bean = document.createElement('img');
+            bean.src = '/public/coffee bean.png'; // Using placeholder for demo
+            bean.className = 'coffee-bean';
+            bean.alt = 'Falling coffee bean';
+            
+            // Set random properties
+            const container = containerSide === 'left' ? leftBeansContainer : rightBeansContainer;
+            const containerWidth = container.offsetWidth;
+            
+            // Random horizontal position within container
+            const randomX = containerSide === 'left' 
+                ? Math.random() * containerWidth 
+                : Math.random() * containerWidth;
+            
+            // Start above the screen
+            const startY = -50;
+            
+            // Apply initial position
+            bean.style.left = `${randomX}px`;
+            bean.style.top = `${startY}px`;
+            
+            // Random rotation
+            const rotation = Math.random() * 360;
+            bean.style.transform = `rotate(${rotation}deg)`;
+            
+            // Add to container
+            container.appendChild(bean);
+            
+            // Animate falling with anime.js
+            anime({
+                targets: bean,
+                top: window.innerHeight + 50, // Beyond screen bottom
+                rotate: rotation + Math.random() * 360, // Additional rotation
+                duration: 3000 + Math.random() * 5000, // Random duration
+                easing: 'linear',
+                complete: function() {
+                    bean.remove(); // Remove when animation completes
+                }
+            });
+        }
+        
+        // Start creating falling beans
+        function startFallingBeans() {
+            // Create beans on the left side
+            setInterval(() => {
+                createFallingBean('left');
+            }, 300 + Math.random() * 200);
+            
+            // Create beans on the right side
+            setInterval(() => {
+                createFallingBean('right');
+            }, 300 + Math.random() * 200);
+        }
+
+        // Store typewriter controller globally
+        let typewriterController;
+
+        // --- Combined Scroll Event Listener (Handles All Sections) ---
+        function handleScroll(event) {
+            // Always prevent default scroll as we are hijacking
+            event.preventDefault();
+
+            let delta = 0;
+            if (event.deltaY) { delta = event.deltaY; }
+            else if (event.detail) { delta = event.detail * 40; }
+            else if (event.wheelDelta) { delta = -event.wheelDelta / 3; }
+
+             // Hide typewriter on first scroll
+    const typewriterContainer = document.getElementById('typewriter-container');
+    if (typewriterContainer && typewriterContainer.style.opacity !== '0') {
+        if (typewriterController) {
+            typewriterController.hide();
+        }
+    }
+
+            if (activeHijackSection === 'plant') {
+                // --- Update Plant Progress ---
+                if (delta < 0) { plantAnimationProgress -= plantScrollSensitivity; }
+                else if (delta > 0) { plantAnimationProgress += plantScrollSensitivity; }
+                plantAnimationProgress = Math.max(0, Math.min(plantGrowthMaxProgress, plantAnimationProgress));
+                updatePlantAnimation(plantAnimationProgress);
+
+                // --- Check for Transition: Plant -> Cherry ---
+                if (delta > 0 && plantAnimationProgress >= plantGrowthMaxProgress) {
+                    activeHijackSection = 'cherry';
+                    plantGrowthSection.style.display = 'none'; // Hide plant section
+                    cherryProcessingSection.style.display = 'flex'; // Show cherry section
+                    cherryAnimationProgress = 0; // Start cherry animation from beginning
+                    updateCherryAnimation(cherryAnimationProgress); // Set initial cherry state
+                }
+
+            } else if (activeHijackSection === 'cherry') {
+                // --- Update Cherry Progress ---
+                if (delta < 0) { cherryAnimationProgress -= cherryScrollSensitivity; }
+                else if (delta > 0) { cherryAnimationProgress += cherryScrollSensitivity; }
+                cherryAnimationProgress = Math.max(0, Math.min(cherryAnimationMaxProgress, cherryAnimationProgress));
+                updateCherryAnimation(cherryAnimationProgress);
+
+                // --- Check for Transition: Cherry -> Plant ---
+                 if (delta < 0 && cherryAnimationProgress <= 0) {
+                     activeHijackSection = 'plant';
+                     cherryProcessingSection.style.display = 'none'; // Hide cherry section
+                     plantGrowthSection.style.display = 'flex'; // Show plant section
+                     plantAnimationProgress = plantGrowthMaxProgress; // Set plant progress to end
+                     updatePlantAnimation(plantAnimationProgress); // Set final plant state before scrolling up
+                 }
+
+                 // --- Check for Transition: Cherry -> YouTube ---
+                 if (delta > 0 && cherryAnimationProgress >= cherryAnimationMaxProgress) {
+                     activeHijackSection = 'youtube';
+                     cherryProcessingSection.style.display = 'none'; // Hide cherry section
+                     youtubeSection.style.display = 'flex'; // Show YouTube section
+                 }
+            } else if (activeHijackSection === 'youtube') {
+                // --- Check for Transition: YouTube -> Cherry ---
+                if (delta < 0) {
+                    activeHijackSection = 'cherry';
+                    youtubeSection.style.display = 'none'; // Hide YouTube section
+                    cherryProcessingSection.style.display = 'flex'; // Show cherry section
+                    cherryAnimationProgress = cherryAnimationMaxProgress; // Set cherry progress to end
+                    updateCherryAnimation(cherryAnimationProgress); // Set final cherry state
+                }
+            }
+        }
+
+        // Wheel listener (always active)
+        window.addEventListener('wheel', handleScroll, { passive: false });
+
+        // Touch listeners (always active)
+        let lastTouchY = 0;
+         window.addEventListener('touchstart', (e) => {
+             lastTouchY = e.touches[0].clientY;
+         }, { passive: false }); // Need false here to prevent default scroll implicitly
+
+         window.addEventListener('touchmove', (e) => {
+             // Always prevent touch scroll because we hijack
+             if (e.cancelable) e.preventDefault();
+
+             const currentTouchY = e.touches[0].clientY;
+             const deltaY = lastTouchY - currentTouchY;
+             lastTouchY = currentTouchY;
+
+             const simulatedEvent = {
+                 deltaY: deltaY,
+                 preventDefault: () => { if (e.cancelable) e.preventDefault(); }, // Pass through if needed
+                 detail: null, wheelDelta: null
+             };
+
+             handleScroll(simulatedEvent);
+
+         }, { passive: false }); // MUST be passive: false
+
+        // Navigation menu functionality
+        document.querySelector('.nav-links').addEventListener('click', function(e) {
+            if (e.target.matches('a')) {
+                e.preventDefault(); // Prevent default navigation
+                
+                const linkText = e.target.textContent.toLowerCase();
+                
+                // Handle navigation based on link clicked
+                if (linkText === 'home') {
+                    // Reset to first section
+                    activeHijackSection = 'plant';
+                    plantGrowthSection.style.display = 'flex';
+                    cherryProcessingSection.style.display = 'none';
+                    youtubeSection.style.display = 'none';
+                    plantAnimationProgress = 0;
+                    updatePlantAnimation(plantAnimationProgress);
+                } else if (linkText === 'about') {
+                    // Go to YouTube section
+                    activeHijackSection = 'youtube';
+                    plantGrowthSection.style.display = 'none';
+                    cherryProcessingSection.style.display = 'none';
+                    youtubeSection.style.display = 'flex';
+                }
+            }
+        });
+
+        // Logo click to return home
+        document.querySelector('.logo').addEventListener('click', function(e) {
+            e.preventDefault();
+            activeHijackSection = 'plant';
+            plantGrowthSection.style.display = 'flex';
+            cherryProcessingSection.style.display = 'none';
+            youtubeSection.style.display = 'none';
+            plantAnimationProgress = 0;
+            updatePlantAnimation(plantAnimationProgress);
+        });
+
+        // --- Initial Setup ---
+        const leftBeansContainer = document.getElementById('leftBeansContainer');
+        const rightBeansContainer = document.getElementById('rightBeansContainer');
+        
+        plantGrowthSection.style.display = 'flex'; // Ensure plant section is visible
+        cherryProcessingSection.style.display = 'none'; // Ensure cherry section is hidden
+        youtubeSection.style.display = 'none'; // Ensure YouTube section is hidden
+        updatePlantAnimation(0);     // Set initial plant state
+        updateCherryAnimation(0);    // Set initial (hidden) cherry state
+        typewriterController = setupTypewriter();
+        // Start falling beans
+        startFallingBeans();
+    }); // End of DOMContentLoaded
+</script>
+</body>
+</html>
