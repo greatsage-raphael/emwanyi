@@ -213,6 +213,15 @@
             text-align: center;
         }
 
+        .single-bean {
+            position: absolute;
+            width: 300px;
+            height: auto;
+            opacity: 1;
+            z-index: 1;
+            will-change: transform;
+        }
+
 
         /* FALLING COFFEE BEANS STYLES */
         .falling-beans-container {
@@ -229,7 +238,7 @@
             position: absolute;
             width: 60px;
             height: auto;
-            opacity: 0.8;
+            opacity: 1;
             z-index: 1;
             will-change: transform;
         }
@@ -355,9 +364,9 @@
         <img src="/public/outer.png" alt="Coffee Plant Germinating" class="plant-element plant-stage plant-germinating">
         <img src="/public/seedling.png" alt="Coffee Seedling" class="plant-element plant-stage plant-seedling">
         <img src="/public/sapling.png" alt="Coffee Sapling" class="plant-element plant-stage plant-sapling">
-        <img src="/public/mature.jpg" alt="Mature Coffee Plant" class="plant-element plant-stage plant-mature">
-        <img src="/public/unripe.jpg" alt="Coffee Plant Unripe Cherries" class="plant-element plant-stage plant-unripe">
-        <img src="/public/ripe.jpg" alt="Coffee Plant Ripe Cherries" class="plant-element plant-stage plant-ripe">
+        <img src="/public/mature.png" alt="Mature Coffee Plant" class="plant-element plant-stage plant-mature">
+        <img src="/public/unripe.png" alt="Coffee Plant Unripe Cherries" class="plant-element plant-stage plant-unripe">
+        <img src="/public/ripe.png" alt="Coffee Plant Ripe Cherries" class="plant-element plant-stage plant-ripe">
         <!-- Single Cherry for Zoom (still part of plant section logic) -->
         <img src="/public/wet.png" alt="Single Ripe Coffee Cherry" class="plant-element cherry-single-zoom">
     </section>
@@ -366,11 +375,11 @@
     <section id="cherry-processing-section" class="fullscreen-section">
         <!-- All processing images are direct children, absolutely positioned -->
          <img src="/public/wet.png" alt="Ripe Coffee Cherry" class="processing-element cherry-ripe"> <!-- Image 1 -->
-         <img src="/public/drying.jpg" alt="Drying Coffee Cherry" class="processing-element cherry-drying"> <!-- Image 2 -->
-         <img src="/public/peel.jpg" alt="Partially Peeled Coffee Cherry" class="processing-element cherry-peel"> <!-- Image 3 -->
+         <img src="/public/drying.png" alt="Drying Coffee Cherry" class="processing-element cherry-drying"> <!-- Image 2 -->
+         <img src="/public/peel.png" alt="Partially Peeled Coffee Cherry" class="processing-element cherry-peel"> <!-- Image 3 -->
          <img src="/public/coffee bean.png" alt="Peeled Coffee Bean" class="processing-element coffee-bean"> <!-- Image 4 -->
-         <img src="/public/ground.jpg" alt="Ground Coffee" class="processing-element coffee-ground"> <!-- Image 5 -->
-         <img src="/public/cup.jpg" alt="Cup of Coffee" class="processing-element coffee-cup"> <!-- Image 6 -->
+         <img src="/public/ground.png" alt="Ground Coffee" class="processing-element coffee-ground"> <!-- Image 5 -->
+         <img src="/public/cup.png" alt="Cup of Coffee" class="processing-element coffee-cup"> <!-- Image 6 -->
     </section>
 
     <!-- Section 3: YouTube Emwanyi Trailer -->
@@ -660,7 +669,7 @@ function setupTypewriter() {
         // --- Falling Coffee Beans Animation ---
         function createFallingBean(containerSide) {
             const bean = document.createElement('img');
-            bean.src = '/public/coffee bean.png'; // Using placeholder for demo
+            bean.src = '/public/singlecoffee.png'; // Using placeholder for demo
             bean.className = 'coffee-bean';
             bean.alt = 'Falling coffee bean';
             
